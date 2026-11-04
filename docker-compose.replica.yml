@@ -23,7 +23,7 @@ services:
     volumes:
       # Keep the archive OUT of OneDrive: thousands of photos being written while
       # OneDrive syncs is a recipe for locked files.
-      - ${PC_STORAGE_PATH:-C:/fotos-casamiento}:/app/uploads
+      - ${PC_STORAGE_PATH:-C:/Users/PC/Pictures/casamiento}:/app/uploads
       - ${PC_DATA_PATH:-C:/photo-upload-data}:/app/data
     restart: unless-stopped
     healthcheck:
