@@ -94,7 +94,8 @@ public class ReplicationClient {
                     });
             return entries == null ? List.of() : entries;
         } catch (RuntimeException e) {
-            throw new ReplicationException("Cannot fetch peer manifest: " + e.getMessage(), e);
+            log.warn("Cannot fetch peer manifest from {}", properties.getPeerUrl(), e);
+            throw new ReplicationException("Cannot fetch peer manifest: " + e, e);
         }
     }
 
@@ -127,7 +128,8 @@ public class ReplicationClient {
                     .retrieve()
                     .body(ReplicationStatus.class);
         } catch (RuntimeException e) {
-            throw new ReplicationException("Cannot fetch peer status: " + e.getMessage(), e);
+            log.warn("Cannot fetch peer status from {}", properties.getPeerUrl(), e);
+            throw new ReplicationException("Cannot fetch peer status: " + e, e);
         }
     }
 
