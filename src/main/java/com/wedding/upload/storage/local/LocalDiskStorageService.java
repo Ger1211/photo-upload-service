@@ -84,15 +84,32 @@ public class LocalDiskStorageService implements StorageService {
 
     public StoredPhoto store(MultipartFile file, String targetFilename, String guestName,
                              String event, LocalDate dateFolder, LocalDateTime uploadedAt) {
-        return store(file, targetFilename, guestName, event, dateFolder, uploadedAt, null);
+        return store(file, targetFilename, guestName, event, dateFolder, uploadedAt, null, null);
     }
 
     public StoredPhoto store(MultipartFile file, String targetFilename, String guestName,
                              String event, LocalDate dateFolder, LocalDateTime uploadedAt,
                              String expectedSha256) {
-        String originalName = file.getOriginalFilename() != null ? file.getOriginalFilename() : "unknown";
+        return store(file, targetFilename, guestName, event, dateFolder, uploadedAt, null, expectedSha256);
+    }
+
+    /**
+     * @param originalName the name the guest's device used. Replication passes it
+     *                     explicitly: the multipart part already carries the
+     *                     renamed file, so falling back to it would lose the
+     *                     original name on the replica. {@code null}/blank keeps
+     *                     the upload behaviour (use the multipart filename).
+     */
+    public StoredPhoto store(MultipartFile file, String targetFilename, String guestName,
+                             String event, LocalDate dateFolder, LocalDateTime uploadedAt,
+                             String originalName, String expectedSha256) {
+        String resolvedOriginalName = originalName;
+        if (resolvedOriginalName == null || resolvedOriginalName.isBlank()) {
+            resolvedOriginalName = file.getOriginalFilename() != null
+                    ? file.getOriginalFilename() : "unknown";
+        }
         try (InputStream in = file.getInputStream()) {
-            return store(in, file.getSize(), originalName, targetFilename, guestName,
+            return store(in, file.getSize(), resolvedOriginalName, targetFilename, guestName,
                     event, dateFolder, uploadedAt, expectedSha256);
         } catch (IOException e) {
             throw new StorageException("Error al guardar el archivo: " + targetFilename, e);

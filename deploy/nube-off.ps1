@@ -11,12 +11,16 @@
 .PARAMETER Force
     Skips the safety check. Use only when you are sure the photos are safe.
 
+.PARAMETER SkipBackup
+    Skips copying the server copy to Pictures\fotos-nube before deleting the VM.
+
 .EXAMPLE
     .\deploy\nube-off.ps1
 #>
 [CmdletBinding()]
 param(
-    [switch]$Force
+    [switch]$Force,
+    [switch]$SkipBackup
 )
 
 $ErrorActionPreference = 'Stop'
@@ -123,6 +127,26 @@ Write-Host "Las dos copias son idénticas ($($cloud.localCount) fotos)." -Foregr
 
 if ($Force) {
     Write-Host "Modo -Force: se saltea la verificación de arriba." -ForegroundColor Yellow
+}
+
+# --- Server copy (belt and braces before the VM disappears) ------------------
+if ($SkipBackup) {
+    Write-Host "Se saltea la copia del servidor (-SkipBackup)." -ForegroundColor Yellow
+}
+else {
+    Write-Host ""
+    Write-Host "Bajando la copia del servidor antes de borrar la VM..." -ForegroundColor Cyan
+    try {
+        & (Join-Path $PSScriptRoot 'descargar-fotos.ps1')
+    }
+    catch {
+        Write-Host "No se pudo bajar la copia del servidor: $($_.Exception.Message)" -ForegroundColor Red
+        if (-not $Force) {
+            Write-Host "NO se borra la VM. La nube sigue prendida." -ForegroundColor Red
+            exit 1
+        }
+        Write-Host "Continuando de todos modos por -Force." -ForegroundColor Yellow
+    }
 }
 
 # --- Delete ------------------------------------------------------------------

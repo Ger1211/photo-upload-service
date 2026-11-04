@@ -110,6 +110,26 @@ class InternalReplicationControllerTest {
     }
 
     @Test
+    void shouldKeepTheGuestOriginalNameFromThePeer() throws Exception {
+        mockMvc.perform(multipart("/api/internal/replicate")
+                        .file(photo())
+                        .header(ReplicationClient.TOKEN_HEADER, TOKEN)
+                        .param("filename", "20261205_203000_abc1234_German.jpg")
+                        .param("dateFolder", "2026-12-05")
+                        .param("event", "marina-fernando")
+                        .param("originalName", "1000170671.jpg")
+                        .param("guestName", "German")
+                        .param("uploadedAt", "2026-12-05T20:30:00")
+                        .param("sha256", ""))
+                .andExpect(status().isOk());
+
+        var photos = PhotoManifest.readAll(tempDir.resolve("uploads").resolve("marina-fernando"));
+        assertEquals(1, photos.size());
+        assertEquals("1000170671.jpg", photos.get(0).originalName(),
+                "The replica must keep the name the guest's device used, not the renamed file");
+    }
+
+    @Test
     void shouldServeStoredPhoto() throws Exception {
         local.upload(photo(), "local.jpg", "Maria", null);
 

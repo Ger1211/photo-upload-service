@@ -82,7 +82,7 @@ public class InternalReplicationController {
         }
 
         try {
-            local.store(file, safeFilename, guestName, safeEvent, date, uploaded, sha256);
+            local.store(file, safeFilename, guestName, safeEvent, date, uploaded, originalName, sha256);
         } catch (StorageException e) {
             log.warn("Replication rejected for {}: {}", safeFilename, e.getMessage());
             return ResponseEntity.status(HttpStatus.UNPROCESSABLE_ENTITY)

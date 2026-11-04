@@ -150,4 +150,28 @@ class LocalDiskStorageServiceTest {
                 LocalDate.now(), LocalDateTime.now(), "deadbeef"));
         assertFalse(Files.exists(tempDir.resolve(LocalDate.now().toString()).resolve("bad.jpg")));
     }
+
+    @Test
+    void shouldUseExplicitOriginalNameWhenProvided() throws Exception {
+        MockMultipartFile file = new MockMultipartFile(
+                "files", "already-renamed.jpg", "image/jpeg", new byte[]{1, 2, 3});
+
+        storageService.store(file, "already-renamed.jpg", "German", null,
+                LocalDate.now(), LocalDateTime.now(), "1000170671.jpg", null);
+
+        List<PhotoInfo> photos = PhotoManifest.readAll(tempDir);
+        assertEquals("1000170671.jpg", photos.get(0).originalName());
+    }
+
+    @Test
+    void shouldFallBackToMultipartNameWhenOriginalNameIsBlank() throws Exception {
+        MockMultipartFile file = new MockMultipartFile(
+                "files", "from-phone.jpg", "image/jpeg", new byte[]{1, 2, 3});
+
+        storageService.store(file, "renamed.jpg", null, null,
+                LocalDate.now(), LocalDateTime.now(), "  ", null);
+
+        List<PhotoInfo> photos = PhotoManifest.readAll(tempDir);
+        assertEquals("from-phone.jpg", photos.get(0).originalName());
+    }
 }
