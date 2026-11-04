@@ -52,17 +52,41 @@ Healthy looks like:
  "missingOnPeer":0,"checksumMismatches":0,"outboxDepth":0,"lastError":null}
 ```
 
+## Download the server copy
+
+```powershell
+.\descargar-fotos.bat
+```
+
+Copies the whole uploads volume from the VM over SCP into
+`C:\Users\PC\Pictures\fotos-nube`, mirroring the same layout as the home replica.
+It downloads into a staging folder, checks the file count against what the cloud
+itself reports, and only then swaps it into place — a failed download leaves the
+previous copy untouched.
+
+`nube-off.bat` runs this automatically before deleting the VM, so the server copy
+is never skipped by accident.
+
 ## Turn it off (safely)
 
 ```powershell
 .\nube-off.bat
 ```
 
-Refuses to delete the VM unless **both** machines report zero divergence, zero
-outbox depth and a reachable peer. Once it passes, the VM is deleted and the
-cost drops to €0. The firewall is kept (it is free) for the next event.
+Three gates run in order:
 
-`-Force` skips the check. Only use it when you are certain the PC has everything.
+1. **Replication check** — refuses to continue unless **both** machines report zero
+   divergence, zero outbox depth and a reachable peer.
+2. **Server copy** — downloads everything to `Pictures\fotos-nube` and verifies the
+   count. If it fails, the VM stays up.
+3. **Delete** — only after 1 and 2 pass. Cost drops to €0.
+
+The firewall is kept (it is free) for the next event.
+
+| Flag | Effect |
+|---|---|
+| `-SkipBackup` | Skips step 2 |
+| `-Force` | Skips the checks in steps 1 and 2 |
 
 ## Failover during the event
 

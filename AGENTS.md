@@ -53,7 +53,9 @@ docker compose -f docker-compose.replica.yml up -d --build
 
 # Cloud VM (Hetzner) — creates, bootstraps and exposes the primary
 ./nube-on.bat
-# Destroys it, but only after proving the PC has every photo
+# Copies the server's photos to Pictures\fotos-nube (nube-off runs it too)
+./descargar-fotos.bat
+# Destroys it, but only after proving the PC has every photo and downloading a copy
 ./nube-off.bat
 ```
 
@@ -126,6 +128,9 @@ Invariants — do not break them:
    becomes downloadable via `/api/photos/...`.
 5. Pushes carry an explicit `dateFolder`: a retry after midnight must still land in
    the folder of the original day.
+6. Pushes carry the guest's `originalName` explicitly. The multipart part already
+   has the renamed file, so `LocalDiskStorageService.store()` must never fall back
+   to it on the replication path.
 
 `RateLimitFilter` only matches `POST /api/upload`, so `/api/internal/**` is already
 exempt — no change needed.
