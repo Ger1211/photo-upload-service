@@ -1,0 +1,92 @@
+# Cloud deployment — cloud primary + home PC replica
+
+The cloud VM is **disposable**: it is created for the event and destroyed
+afterwards. The archive lives on the home PC. Both machines keep identical copies.
+
+```
+Guests ──HTTPS──▶ Tailscale Funnel ──▶ VM (primary)
+                                         ├─ writes to its own disk (source of truth)
+                                         ├─ pushes to the PC over the tailnet
+                                         └─ reconciles every 60 s, both directions
+
+Home PC (replica) ──▶ pushes to the VM through its public Funnel URL
+```
+
+## Prerequisites
+
+| Thing | Where |
+|---|---|
+| Hetzner project + API token (Read & Write) | `.env` → `HCLOUD_TOKEN` |
+| SSH key registered in Hetzner | `.env` → `HCLOUD_SSH_KEY` |
+| Tailscale auth key (reusable, ephemeral, `tag:nube`) | `.env` → `TS_AUTHKEY` |
+| Public GitHub repo | `.env` → `REPO_URL` |
+| Shared replication secret | `.env` → `REPLICATION_TOKEN` |
+
+`.env` is gitignored. The VM never sees this file: `cloud-init.yaml` receives the
+values it needs as user-data.
+
+## Turn it on
+
+```powershell
+.\nube-on.bat
+```
+
+Creates (or reuses) a firewall that allows only SSH and ICMP, creates the VM,
+installs Docker + Tailscale, clones the repo, builds the image, starts the
+service and exposes it with Funnel. Then it waits for `https://<FUNNEL_HOST>/api/health`.
+
+Takes 3–6 minutes on a fresh VM (the Docker build dominates).
+
+## Check it
+
+```powershell
+# Both sides must report the same count and zero divergence
+curl.exe -H "X-Replication-Token: <token>" https://<FUNNEL_HOST>/api/internal/status
+curl.exe -H "X-Replication-Token: <token>" http://localhost:8080/api/internal/status
+```
+
+Healthy looks like:
+
+```json
+{"peerReachable":true,"localCount":42,"peerCount":42,"missingLocally":0,
+ "missingOnPeer":0,"checksumMismatches":0,"outboxDepth":0,"lastError":null}
+```
+
+## Turn it off (safely)
+
+```powershell
+.\nube-off.bat
+```
+
+Refuses to delete the VM unless **both** machines report zero divergence, zero
+outbox depth and a reachable peer. Once it passes, the VM is deleted and the
+cost drops to €0. The firewall is kept (it is free) for the next event.
+
+`-Force` skips the check. Only use it when you are certain the PC has everything.
+
+## Failover during the event
+
+If the cloud dies mid-event:
+
+1. Edit `invitacion-marina-fernando/js/fotos.js` → `API_BASE_URL` to
+   `https://desktop-udmt3js.tailfe106b.ts.net`.
+2. Commit and push (GitHub Pages deploys).
+3. Guests keep uploading to the PC.
+4. When the cloud is back, the reconciler copies those photos up automatically.
+
+## Troubleshooting
+
+| Symptom | Check |
+|---|---|
+| `nube-on` times out | `ssh root@<ip> 'tail -50 /var/log/cloud-init-output.log'` |
+| Health OK but Funnel 404 | `ssh root@<ip> 'tailscale funnel status'` |
+| `peerReachable:false` | `tailscale status` on both machines; the PC must be on |
+| `outboxDepth` stuck | the PC is unreachable; the retry backs off up to 5 min |
+| `checksumMismatches` > 0 | do **not** delete the VM; compare the files by hand |
+| Container cannot write | check `PC_STORAGE_PATH` exists and is not inside OneDrive |
+
+## Costs
+
+CX23 in `nbg1`: €0.0104/hour, monthly cap €6.49. A full weekend ≈ **€0.50**.
+After `nube-off` the cost is **€0** (Hetzner bills servers while they exist, even
+when powered off — that is why the script deletes instead of stopping).

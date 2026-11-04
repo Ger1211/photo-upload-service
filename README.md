@@ -221,9 +221,17 @@ The application tries to find credentials in this order:
 3. Default classpath locations (`classpath:service-account.json`, `classpath:credentials/service-account.json`)
 4. Default filesystem locations (`credentials/service-account.json`, `service-account.json`)
 
-## Render Deployment
+## Cloud Deployment (current)
 
-This is the recommended production deployment.
+The service runs on a disposable Hetzner VM (cloud primary) and keeps an identical
+copy on the home PC (replica) over Tailscale. Turn it on with `nube-on.bat` and off
+with `nube-off.bat`. Full runbook: [deploy/README.md](deploy/README.md).
+
+## Render Deployment (legacy)
+
+> The project no longer uses Render or Google Drive. This section is kept for
+> historical reference only.
+
 
 ### Step 1: Push to GitHub
 

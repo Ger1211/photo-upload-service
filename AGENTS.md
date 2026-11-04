@@ -47,6 +47,14 @@ java -jar build/libs/photo-upload-service-1.0.0.jar --spring.profiles.active=loc
 # Docker build
 docker compose build
 docker compose up -d
+
+# Home PC as replica (archive outside OneDrive)
+docker compose -f docker-compose.replica.yml up -d --build
+
+# Cloud VM (Hetzner) — creates, bootstraps and exposes the primary
+./nube-on.bat
+# Destroys it, but only after proving the PC has every photo
+./nube-off.bat
 ```
 
 ## Architecture
@@ -86,28 +94,44 @@ album). `LocalDiskStorageService.sanitizeEvent()` normalizes event names to lowe
 serves them at `/api/photos/{event}/{date}/{filename}`. Existing default-album endpoints
 stay for backward compat.
 
-## Storage providers
+## Storage
 
-Two implementations of `StorageService`, controlled via `storage.provider` property:
+`LocalDiskStorageService` is the only storage backend (`storage.local.path`, default
+`./uploads`). Google Drive and the noop provider were removed — do not re-add them.
 
-| Value | Class | Behavior |
-|-------|-------|----------|
-| `noop` | `NoopStorageService` | Logs uploads, returns fake IDs. No external service needed. For local dev. |
-| `drive` | `GoogleDriveStorageService` | Real Google Drive upload via Service Account. Requires credentials. |
+Photos live at `{storageRoot}/{event}/{yyyy-MM-dd}/{filename}` with an append-only
+`manifest.jsonl` per date folder. `PhotoInfo` carries a `sha256` (nullable: entries
+written before replication existed do not have one).
 
-Both use `@ConditionalOnProperty` — only one bean is active at a time. The `local` profile defaults to `noop`, production defaults to `drive`.
+## Peer replication (cloud primary + home PC replica)
+
+`replication.*` is **disabled by default**; a single-machine deployment behaves
+exactly as before. When enabled:
+
+| Bean | Role |
+|------|------|
+| `ReplicatingStorageService` | `@Primary` decorator: writes locally, then pushes to the peer. A peer failure never fails the guest upload — it goes to the outbox. |
+| `Outbox` | Append-only `{state-path}/outbox.jsonl`, backoff 30 s → 5 min. |
+| `ReconciliationJob` | Every 60 s compares both manifests by `(event, dateFolder, filename, sha256)` and repairs **both directions**. |
+| `InternalReplicationController` | `/api/internal/{replicate,manifest,photo,status}`, guarded by `X-Replication-Token`. |
+
+Invariants — do not break them:
+
+1. The guest gets a success response only after the local write succeeds.
+2. The internal endpoints write through the **concrete** `LocalDiskStorageService`,
+   never through the `@Primary` decorator (otherwise pushes loop forever).
+3. Idempotency is by filename: if the file already exists on the peer, the push is
+   `skipped` and the manifest is not duplicated.
+4. `replication.state-path` must be **outside** `storage.local.path`, or the outbox
+   becomes downloadable via `/api/photos/...`.
+5. Pushes carry an explicit `dateFolder`: a retry after midnight must still land in
+   the folder of the original day.
+
+`RateLimitFilter` only matches `POST /api/upload`, so `/api/internal/**` is already
+exempt — no change needed.
 
 Tests use their own `src/test/resources/application.yml` — no profile needed.
 
-## Credential auto-detection (critical)
-
-`GoogleDriveStorageService` tries credentials in this order at startup:
-
-1. `/etc/secrets/service-account.json` — Render Secret Files directory
-2. `GOOGLE_SERVICE_ACCOUNT_PATH` env var — supports `file:`, `classpath:`, absolute, relative
-3. Default classpath/filesystem locations
-
-If none resolve, the app fails at startup with a clear error. Tests use `classpath:test-credentials.json` (fake key in `src/test/resources/`).
 
 ## Container gotchas
 
