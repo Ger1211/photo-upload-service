@@ -79,7 +79,7 @@ Write-Host "== Photo Upload Service - encendiendo la nube ==" -ForegroundColor C
 $existing = (Invoke-Hetzner -Method GET -Path "/servers?name=$serverName").servers
 if ($existing.Count -gt 0) {
     Write-Host "Ya existe una VM '$serverName' (id $($existing[0].id), IP $($existing[0].public_net.ipv4.ip))." -ForegroundColor Yellow
-    Write-Host "Si querés recrearla: .\deploy\nube-off.ps1 -Force y volvé a correr este script." -ForegroundColor Yellow
+    Write-Host "Si queres recrearla: .\deploy\nube-off.ps1 -Force y volve a correr este script." -ForegroundColor Yellow
     exit 1
 }
 
@@ -139,31 +139,31 @@ while ((Get-Date) -lt $deadline) {
         if ($health.StatusCode -eq 200) { $ready = $true; break }
     }
     catch {
-        Write-Host "  ...todavía no ($([int]((Get-Date) - $startedAt).TotalSeconds)s)" -ForegroundColor DarkGray
+        Write-Host "  ...todavia no ($([int]((Get-Date) - $startedAt).TotalSeconds)s)" -ForegroundColor DarkGray
     }
 }
 
 Write-Host ""
 if ($ready) {
     Write-Host "NUBE LISTA" -ForegroundColor Green
-    Write-Host "  URL pública : $funnelUrl"
+    Write-Host "  URL publica : $funnelUrl"
     Write-Host "  IP          : $ip"
     Write-Host "  SSH         : ssh root@$ip"
     Write-Host ""
     try {
         $status = Invoke-RestMethod -Uri "$funnelUrl/api/internal/status" `
             -Headers @{ 'X-Replication-Token' = $envMap['REPLICATION_TOKEN'] } -TimeoutSec 20
-        Write-Host "  Replicación : $($status | ConvertTo-Json -Compress)"
+        Write-Host "  Replicacion : $($status | ConvertTo-Json -Compress)"
     }
     catch {
-        Write-Host "  Replicación : todavía no responde (normal durante los primeros segundos)" -ForegroundColor Yellow
+        Write-Host "  Replicacion : todavia no responde (normal durante los primeros segundos)" -ForegroundColor Yellow
     }
     Write-Host ""
     Write-Host "Apagado seguro al terminar el evento: .\deploy\nube-off.ps1" -ForegroundColor Cyan
 }
 else {
-    Write-Host "La VM existe (id $serverId, IP $ip) pero el health check no respondió." -ForegroundColor Red
-    Write-Host "Revisá: ssh root@$ip 'tail -50 /var/log/cloud-init-output.log'" -ForegroundColor Yellow
+    Write-Host "La VM existe (id $serverId, IP $ip) pero el health check no respondio." -ForegroundColor Red
+    Write-Host "Revisa: ssh root@$ip 'tail -50 /var/log/cloud-init-output.log'" -ForegroundColor Yellow
     Write-Host "Para borrarla: .\deploy\nube-off.ps1 -Force" -ForegroundColor Yellow
     exit 1
 }

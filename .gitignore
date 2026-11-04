@@ -54,5 +54,6 @@ credentials/
 # Uploaded photos, replication state and stress fixtures.
 uploads/
 data/
+deploy/logs/
 stress/fixtures/
 stress/*.csv

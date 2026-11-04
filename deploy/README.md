@@ -100,6 +100,30 @@ If the cloud dies mid-event:
 3. Guests keep uploading to the PC.
 4. When the cloud is back, the reconciler copies those photos up automatically.
 
+## Schedule it for the event
+
+```powershell
+.\deploy\programar.ps1            # registers both tasks
+.\deploy\programar.ps1 -Status    # next run times
+.\deploy\programar.ps1 -Remove    # unregisters them
+.\deploy\programar.ps1 -Test      # proves the scheduler works here
+```
+
+Defaults: up on **Friday 2026-12-04 07:00**, down on **Saturday 2026-12-05 18:00**
+(local time). Override with `-On` / `-Off`.
+
+| Task | Runs |
+|---|---|
+| `PhotoUpload-Nube-On` | `nube-on.ps1` |
+| `PhotoUpload-Nube-Off` | `nube-off.ps1` (gate → server copy → delete) |
+
+Settings: `StartWhenAvailable` (catches up if the PC was asleep), `WakeToRun`,
+30-minute limit, and output appended to `deploy\logs\`.
+
+> The tasks run **inside the logged-on user session**: the server-copy download
+> uses the SSH key in the user profile and Docker Desktop runs there. The PC must
+> be on and logged in at that time.
+
 ## Troubleshooting
 
 | Symptom | Check |

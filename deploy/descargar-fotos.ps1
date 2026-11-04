@@ -56,7 +56,7 @@ Write-Host "Descargando de $ip a $Destination ..." -ForegroundColor Cyan
 scp -r "root@${ip}:/var/lib/docker/volumes/photo-upload-service_uploads/_data/." "$staging\"
 if ($LASTEXITCODE -ne 0) {
     Remove-Item $staging -Recurse -Force -ErrorAction SilentlyContinue
-    throw "scp falló con código $LASTEXITCODE. La copia anterior no se tocó."
+    throw "scp fallo con codigo $LASTEXITCODE. La copia anterior no se toco."
 }
 
 $downloaded = (Get-ChildItem $staging -Recurse -File |
@@ -69,12 +69,12 @@ try {
     $expected = [int]$status.localCount
 }
 catch {
-    Write-Host "  (no se pudo consultar el conteo de la nube; se omite la verificación)" -ForegroundColor Yellow
+    Write-Host "  (no se pudo consultar el conteo de la nube; se omite la verificacion)" -ForegroundColor Yellow
 }
 
 if ($null -ne $expected -and $expected -ne $downloaded) {
     Remove-Item $staging -Recurse -Force -ErrorAction SilentlyContinue
-    throw "Se descargaron $downloaded fotos pero la nube reporta $expected. La copia anterior no se tocó."
+    throw "Se descargaron $downloaded fotos pero la nube reporta $expected. La copia anterior no se toco."
 }
 
 if (Test-Path $Destination) { Remove-Item $Destination -Recurse -Force }
@@ -85,4 +85,4 @@ Write-Host ""
 Write-Host "Copia del servidor lista" -ForegroundColor Green
 Write-Host "  Destino : $Destination"
 Write-Host "  Fotos   : $downloaded$(if ($null -ne $expected) { " (la nube reporta $expected)" })"
-Write-Host "  Tamaño  : $sizeMb MB (incluye thumbnails)"
+Write-Host "  Tamano  : $sizeMb MB (incluye thumbnails)"

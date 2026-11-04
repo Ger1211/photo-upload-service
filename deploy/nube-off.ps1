@@ -107,7 +107,7 @@ while ($attempt -lt $maxAttempts) {
         $problems += "La nube no responde en $cloudUrl/api/internal/status"
     }
     if ($null -eq $pc) {
-        $problems += "La PC no responde en $($envMap['PC_STATUS_URL'])/api/internal/status (¿está corriendo el Docker con replicación activa?)"
+        $problems += "La PC no responde en $($envMap['PC_STATUS_URL'])/api/internal/status (?esta corriendo el Docker con replicacion activa?)"
     }
 
     if ($null -ne $cloud) {
@@ -124,7 +124,7 @@ while ($attempt -lt $maxAttempts) {
     if ($problems.Count -eq 0) { break }
 
     if ($attempt -lt $maxAttempts) {
-        Write-Host "  Intento $attempt/$maxAttempts sin converger todavía; espero $waitSeconds s..." -ForegroundColor Yellow
+        Write-Host "  Intento $attempt/$maxAttempts sin converger todavia; espero $waitSeconds s..." -ForegroundColor Yellow
         Start-Sleep -Seconds $waitSeconds
     }
 }
@@ -138,14 +138,14 @@ if ($problems.Count -gt 0) {
     Write-Host "NO se borra la VM. Problemas detectados:" -ForegroundColor Red
     foreach ($p in $problems) { Write-Host "  - $p" -ForegroundColor Red }
     Write-Host ""
-    Write-Host "Si estás seguro de que las fotos están en la PC: .\deploy\nube-off.ps1 -Force" -ForegroundColor Yellow
+    Write-Host "Si estas seguro de que las fotos estan en la PC: .\deploy\nube-off.ps1 -Force" -ForegroundColor Yellow
     exit 1
 }
 
-Write-Host "Las dos copias son idénticas ($($cloud.localCount) fotos)." -ForegroundColor Green
+Write-Host "Las dos copias son identicas ($($cloud.localCount) fotos)." -ForegroundColor Green
 
 if ($Force) {
-    Write-Host "Modo -Force: se saltea la verificación de arriba." -ForegroundColor Yellow
+    Write-Host "Modo -Force: se saltea la verificacion de arriba." -ForegroundColor Yellow
 }
 
 # --- Server copy (belt and braces before the VM disappears) ------------------
