@@ -1,0 +1,29 @@
+spring:
+  config:
+    activate:
+      on-profile: prod
+
+server:
+  compression:
+    enabled: true
+    mime-types: application/json,application/xml,text/html,text/plain,text/css
+    min-response-size: 1024
+
+management:
+  endpoint:
+    health:
+      show-details: never
+
+cors:
+  allowed-origins:
+    - https://meliydiego.site
+    - https://marinayfernando.site
+    - https://ger1211.github.io
+
+logging:
+  level:
+    root: WARN
+    com.wedding.upload: ${LOG_LEVEL:INFO}
+    org.springframework.web: WARN
+  pattern:
+    console: "%d{yyyy-MM-dd HH:mm:ss.SSS} [%thread] %-5level %logger{36} - %msg%n"

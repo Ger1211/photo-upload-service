@@ -1,0 +1,35 @@
+services:
+  photo-upload:
+    build: .
+    container_name: photo-upload-backend
+    ports:
+      # Bound on the host so the tailnet peer (home PC) can push photos.
+      # The Hetzner firewall blocks 8080 from the public internet; guests reach
+      # the service only through Tailscale Funnel on 443.
+      - "8080:8080"
+    environment:
+      SPRING_PROFILES_ACTIVE: prod
+      SERVER_PORT: 8080
+      STORAGE_LOCAL_PATH: /app/uploads
+      REPLICATION_ENABLED: "true"
+      REPLICATION_ROLE: primary
+      REPLICATION_PEER_URL: ${REPLICATION_PEER_URL}
+      REPLICATION_TOKEN: ${REPLICATION_TOKEN}
+      REPLICATION_STATE_PATH: /app/data
+      REPLICATION_RECONCILE_INTERVAL_MS: ${REPLICATION_RECONCILE_INTERVAL_MS:-60000}
+      UPLOAD_RATE_LIMIT_PER_MINUTE: ${UPLOAD_RATE_LIMIT_PER_MINUTE:-800}
+      LOG_LEVEL: ${LOG_LEVEL:-INFO}
+    volumes:
+      - uploads:/app/uploads
+      - data:/app/data
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD-SHELL", "wget --no-verbose --tries=1 --spider http://localhost:8080/api/health || exit 1"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 90s
+
+volumes:
+  uploads:
+  data:

@@ -1,0 +1,10 @@
+build/
+.gradle/
+.gradle-cache/
+uploads/
+data/
+stress/
+.env
+.env.*
+credentials/
+*.md

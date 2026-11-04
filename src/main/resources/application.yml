@@ -1,0 +1,74 @@
+spring:
+  application:
+    name: photo-upload-service
+  servlet:
+    multipart:
+      max-file-size: ${UPLOAD_MAX_FILE_SIZE_MB:100}MB
+      max-request-size: ${UPLOAD_MAX_REQUEST_SIZE_MB:2100}MB
+      enabled: true
+  lifecycle:
+    timeout-per-shutdown-phase: 30s
+
+server:
+  port: ${SERVER_PORT:8080}
+  shutdown: graceful
+  forward-headers-strategy: framework
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health
+  endpoint:
+    health:
+      show-details: ${HEALTH_SHOW_DETAILS:always}
+
+storage:
+  local:
+    path: ${STORAGE_LOCAL_PATH:./uploads}
+
+# Peer replication (cloud primary + home PC replica). Disabled by default so a
+# single-machine deployment keeps working unchanged.
+replication:
+  enabled: ${REPLICATION_ENABLED:false}
+  role: ${REPLICATION_ROLE:primary}
+  peer-url: ${REPLICATION_PEER_URL:}
+  token: ${REPLICATION_TOKEN:}
+  timeout-ms: ${REPLICATION_TIMEOUT_MS:3000}
+  reconcile-interval-ms: ${REPLICATION_RECONCILE_INTERVAL_MS:60000}
+  reconcile-initial-delay-ms: ${REPLICATION_RECONCILE_INITIAL_DELAY_MS:15000}
+  state-path: ${REPLICATION_STATE_PATH:./data}
+
+upload:
+  allowed-content-types:
+    - image/jpeg
+    - image/png
+    - image/webp
+    - image/heic
+    - image/heif
+  allowed-extensions:
+    - jpg
+    - jpeg
+    - png
+    - webp
+    - heic
+  max-file-size-mb: ${UPLOAD_MAX_FILE_SIZE_MB:100}
+  max-files-per-request: ${UPLOAD_MAX_FILES_PER_REQUEST:20}
+
+rate-limit:
+  uploads-per-minute: ${UPLOAD_RATE_LIMIT_PER_MINUTE:200}
+
+cors:
+  allowed-origins:
+    - https://meliydiego.site
+    - https://marinayfernando.site
+    - https://ger1211.github.io
+    - http://localhost:3000
+    - http://localhost:4200
+    - http://localhost:8000
+    - http://127.0.0.1:8000
+
+logging:
+  level:
+    com.wedding.upload: ${LOG_LEVEL:INFO}
+    org.springframework.web: ${WEB_LOG_LEVEL:WARN}

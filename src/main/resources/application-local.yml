@@ -1,0 +1,12 @@
+spring:
+  config:
+    activate:
+      on-profile: local
+
+rate-limit:
+  uploads-per-minute: ${UPLOAD_RATE_LIMIT_PER_MINUTE:1000}
+
+logging:
+  level:
+    com.wedding.upload: DEBUG
+    org.springframework.web: DEBUG

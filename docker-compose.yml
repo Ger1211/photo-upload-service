@@ -1,0 +1,25 @@
+services:
+  photo-upload:
+    build: .
+    container_name: photo-upload-backend
+    ports:
+      - "${SERVER_PORT:-8080}:8080"
+    environment:
+      SERVER_PORT: ${SERVER_PORT:-8080}
+      SPRING_PROFILES_ACTIVE: ${SPRING_PROFILES_ACTIVE:-local}
+      LOG_LEVEL: ${LOG_LEVEL:-DEBUG}
+      STORAGE_LOCAL_PATH: /app/uploads
+      UPLOAD_MAX_FILE_SIZE_MB: ${UPLOAD_MAX_FILE_SIZE_MB:-100}
+      UPLOAD_MAX_FILES_PER_REQUEST: ${UPLOAD_MAX_FILES_PER_REQUEST:-20}
+      UPLOAD_RATE_LIMIT_PER_MINUTE: ${UPLOAD_RATE_LIMIT_PER_MINUTE:-1000}
+    volumes:
+      - ./uploads:/app/uploads
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD-SHELL", "wget --no-verbose --tries=1 --spider http://localhost:8080/api/health || exit 1"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 30s
+
+  # tunnel replaced by Tailscale Funnel — see AGENTS.md

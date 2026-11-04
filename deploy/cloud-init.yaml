@@ -1,0 +1,29 @@
+#cloud-config
+# Bootstraps the cloud VM: Docker, Tailscale, the service and its Funnel.
+# Placeholders are filled in by deploy/nube-on.ps1 before the file is sent.
+package_update: true
+package_upgrade: false
+
+write_files:
+  - path: /opt/photo-upload.env
+    permissions: '0600'
+    content: |
+      REPLICATION_PEER_URL=__PEER_URL__
+      REPLICATION_TOKEN=__REPLICATION_TOKEN__
+      UPLOAD_RATE_LIMIT_PER_MINUTE=800
+      LOG_LEVEL=INFO
+
+runcmd:
+  - export DEBIAN_FRONTEND=noninteractive
+  - apt-get update -y
+  - apt-get install -y git curl ca-certificates
+  - curl -fsSL https://get.docker.com | sh
+  - systemctl enable --now docker
+  - curl -fsSL https://tailscale.com/install.sh | sh
+  - tailscale up --authkey=__TS_AUTHKEY__ --hostname=__TS_HOSTNAME__ --ssh
+  - git clone --depth 1 __REPO_URL__ /opt/photo-upload-service
+  - cp /opt/photo-upload.env /opt/photo-upload-service/.env
+  - cd /opt/photo-upload-service && docker compose -f docker-compose.prod.yml up -d --build
+  - tailscale funnel --bg 8080
+
+final_message: "photo-upload-service listo en $UPTIME segundos"

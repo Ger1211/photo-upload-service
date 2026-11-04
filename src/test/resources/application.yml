@@ -1,0 +1,34 @@
+spring:
+  application:
+    name: photo-upload-service
+
+storage:
+  local:
+    path: ./uploads
+
+upload:
+  allowed-content-types:
+    - image/jpeg
+    - image/png
+    - image/webp
+    - image/heic
+    - image/heif
+  allowed-extensions:
+    - jpg
+    - jpeg
+    - png
+    - webp
+    - heic
+  max-file-size-mb: 100
+  max-files-per-request: 20
+
+rate-limit:
+  uploads-per-minute: 1000
+
+cors:
+  allowed-origins:
+    - http://localhost:3000
+
+logging:
+  level:
+    com.wedding.upload: DEBUG

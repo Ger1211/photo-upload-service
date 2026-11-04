@@ -1,0 +1,58 @@
+HELP.md
+.gradle/
+build/
+!gradle/wrapper/gradle-wrapper.jar
+!**/src/main/**/build/
+!**/src/test/**/build/
+
+.idea/
+*.iws
+*.iml
+*.ipr
+.vscode/
+
+bin/
+out/
+
+*.class
+*.jar
+*.war
+*.nar
+*.ear
+*.zip
+*.tar.gz
+*.rar
+
+# ===================================================
+# CREDENTIALS — NEVER COMMIT THESE
+# ===================================================
+# Google Service Account JSON files contain a private
+# key that grants programmatic access to your Google
+# Cloud project. If committed, anyone with repository
+# access can impersonate your Service Account.
+#
+# All credential files must be injected at runtime
+# via environment variables or Render Secret Files.
+# ===================================================
+credentials/
+**/credentials/
+**/service-account.json
+**/google-credentials.json
+*-credentials.json
+*.pem
+*.key
+*.p12
+*.pkcs12
+
+.env
+.env.local
+.env.production
+
+# ===================================================
+# RUNTIME DATA — never commit
+# ===================================================
+# Uploaded photos, replication state and stress fixtures.
+uploads/
+data/
+stress/fixtures/
+stress/*.csv
