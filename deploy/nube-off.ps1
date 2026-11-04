@@ -86,27 +86,47 @@ if ($servers.Count -eq 0) {
 }
 
 # --- Safety gate -------------------------------------------------------------
+# Each side reports the last reconciliation it ran, so right after an upload one
+# of them can be up to a cycle behind. Poll until they agree instead of failing
+# on a stale snapshot.
+$maxAttempts = 5
+$waitSeconds = 20
+$attempt = 0
 $problems = @()
+$cloud = $null
+$pc = $null
 
-$cloud = Get-ReplicationStatus -BaseUrl $cloudUrl -Token $token
-$pc = Get-ReplicationStatus -BaseUrl $envMap['PC_STATUS_URL'] -Token $token
+while ($attempt -lt $maxAttempts) {
+    $attempt++
+    $problems = @()
 
-if ($null -eq $cloud) {
-    $problems += "La nube no responde en $cloudUrl/api/internal/status"
-}
-if ($null -eq $pc) {
-    $problems += "La PC no responde en $($envMap['PC_STATUS_URL'])/api/internal/status (¿está corriendo el Docker con replicación activa?)"
-}
+    $cloud = Get-ReplicationStatus -BaseUrl $cloudUrl -Token $token
+    $pc = Get-ReplicationStatus -BaseUrl $envMap['PC_STATUS_URL'] -Token $token
 
-if ($null -ne $cloud) {
-    if (-not $cloud.peerReachable) { $problems += "La nube no ve a la PC (peerReachable=false)" }
-    if ($cloud.outboxDepth -ne 0) { $problems += "La nube tiene $($cloud.outboxDepth) fotos en cola sin enviar" }
-    if ($cloud.missingLocally -ne 0) { $problems += "A la nube le faltan $($cloud.missingLocally) fotos de la PC" }
-    if ($cloud.missingOnPeer -ne 0) { $problems += "A la PC le faltan $($cloud.missingOnPeer) fotos de la nube" }
-    if ($cloud.checksumMismatches -ne 0) { $problems += "Hay $($cloud.checksumMismatches) archivos con checksum distinto" }
-}
-if ($null -ne $pc -and $null -ne $cloud -and $pc.localCount -ne $cloud.localCount) {
-    $problems += "Conteos distintos: PC=$($pc.localCount) vs nube=$($cloud.localCount)"
+    if ($null -eq $cloud) {
+        $problems += "La nube no responde en $cloudUrl/api/internal/status"
+    }
+    if ($null -eq $pc) {
+        $problems += "La PC no responde en $($envMap['PC_STATUS_URL'])/api/internal/status (¿está corriendo el Docker con replicación activa?)"
+    }
+
+    if ($null -ne $cloud) {
+        if (-not $cloud.peerReachable) { $problems += "La nube no ve a la PC (peerReachable=false)" }
+        if ($cloud.outboxDepth -ne 0) { $problems += "La nube tiene $($cloud.outboxDepth) fotos en cola sin enviar" }
+        if ($cloud.missingLocally -ne 0) { $problems += "A la nube le faltan $($cloud.missingLocally) fotos de la PC" }
+        if ($cloud.missingOnPeer -ne 0) { $problems += "A la PC le faltan $($cloud.missingOnPeer) fotos de la nube" }
+        if ($cloud.checksumMismatches -ne 0) { $problems += "Hay $($cloud.checksumMismatches) archivos con checksum distinto" }
+    }
+    if ($null -ne $pc -and $null -ne $cloud -and $pc.localCount -ne $cloud.localCount) {
+        $problems += "Conteos distintos: PC=$($pc.localCount) vs nube=$($cloud.localCount)"
+    }
+
+    if ($problems.Count -eq 0) { break }
+
+    if ($attempt -lt $maxAttempts) {
+        Write-Host "  Intento $attempt/$maxAttempts sin converger todavía; espero $waitSeconds s..." -ForegroundColor Yellow
+        Start-Sleep -Seconds $waitSeconds
+    }
 }
 
 Write-Host ""
@@ -118,7 +138,6 @@ if ($problems.Count -gt 0) {
     Write-Host "NO se borra la VM. Problemas detectados:" -ForegroundColor Red
     foreach ($p in $problems) { Write-Host "  - $p" -ForegroundColor Red }
     Write-Host ""
-    Write-Host "Esperá un ciclo de reconciliación (1 min) y volvé a intentar." -ForegroundColor Yellow
     Write-Host "Si estás seguro de que las fotos están en la PC: .\deploy\nube-off.ps1 -Force" -ForegroundColor Yellow
     exit 1
 }

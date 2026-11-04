@@ -76,7 +76,9 @@ is never skipped by accident.
 Three gates run in order:
 
 1. **Replication check** — refuses to continue unless **both** machines report zero
-   divergence, zero outbox depth and a reachable peer.
+   divergence, zero outbox depth and a reachable peer. Each side reports its last
+   reconciliation, so the check polls up to 5 times (20 s apart) until they agree
+   instead of failing on a stale snapshot.
 2. **Server copy** — downloads everything to `Pictures\fotos-nube` and verifies the
    count. If it fails, the VM stays up.
 3. **Delete** — only after 1 and 2 pass. Cost drops to €0.
